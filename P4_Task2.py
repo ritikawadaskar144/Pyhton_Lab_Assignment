@@ -26,3 +26,5 @@ product = np.dot(A, B)
 
 print("\nProduct Matrix (5x2):")
 print(product)
+
+
