@@ -1,0 +1,3 @@
+Hello students
+Welcome to python programming
+File handling is easy
