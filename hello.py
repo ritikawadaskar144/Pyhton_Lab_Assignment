@@ -1,75 +1,120 @@
-# print("Hello Python")
-# Base Class
-class Student:
-    def __init__(self, name, marks):
-        self.name = name
-        self.marks = marks   # List of 5 subject marks
+import matplotlib.pyplot as plt
+
+# Example process data
+processes = ['P1', 'P2', 'P3', 'P4']
+arrival_time = [0, 1, 2, 3]
+burst_time = [5, 3, 8, 6]
+priority = [2, 1, 4, 3]
 
 
-# Derived Class
-class Result(Student):
-    def __init__(self, name, marks):
-        super().__init__(name, marks)
-        self.total = 0
-        self.percentage = 0
-        self.grade = ""
+# ---------------- FCFS ----------------
+def fcfs(processes, burst_time):
+    waiting_time = [0] * len(processes)
 
-    def calculate_result(self):
-        self.total = sum(self.marks)
-        self.percentage = self.total / len(self.marks)
+    for i in range(1, len(processes)):
+        waiting_time[i] = burst_time[i - 1] + waiting_time[i - 1]
 
-        if self.percentage >= 90:
-            self.grade = "A"
-        elif self.percentage >= 75:
-            self.grade = "B"
-        elif self.percentage >= 60:
-            self.grade = "C"
-        elif self.percentage >= 40:
-            self.grade = "D"
-        else:
-            self.grade = "F"
+    turnaround_time = [burst_time[i] + waiting_time[i] for i in range(len(processes))]
 
-    def generate_marksheet(self):
-        filename = f"{self.name}_Marksheet.txt"
+    print("FCFS Waiting Time:", waiting_time)
+    print("FCFS Turnaround Time:", turnaround_time)
 
-        with open(filename, "w") as file:
-            file.write("----------------------------------------\n")
-            file.write("           STUDENT MARKSHEET\n")
-            file.write("----------------------------------------\n")
-            file.write(f"Name        : {self.name}\n")
-            file.write("----------------------------------------\n")
-
-            for i, mark in enumerate(self.marks):
-                file.write(f"Subject {i+1}   : {mark}\n")
-
-            file.write("----------------------------------------\n")
-            file.write(f"Total       : {self.total}\n")
-            file.write(f"Percentage  : {self.percentage:.2f}%\n")
-            file.write(f"Grade       : {self.grade}\n")
-            file.write("----------------------------------------\n")
+    gantt_chart(processes, burst_time, "FCFS")
 
 
-# Main Program
-def main():
-    try:
-        with open("students.txt", "r") as infile:
-            lines = infile.readlines()
+# ---------------- SJF ----------------
+def sjf(processes, burst_time):
+    data = list(zip(processes, burst_time))
+    data.sort(key=lambda x: x[1])
 
-            for line in lines[:50]:   # Process first 50 students
-                data = line.strip().split()
+    processes_sorted = [x[0] for x in data]
+    burst_sorted = [x[1] for x in data]
 
-                name = data[0]
-                marks = list(map(int, data[1:]))
+    waiting_time = [0] * len(processes)
 
-                student = Result(name, marks)
-                student.calculate_result()
-                student.generate_marksheet()
+    for i in range(1, len(processes)):
+        waiting_time[i] = burst_sorted[i - 1] + waiting_time[i - 1]
 
-        print("50 Marksheet files generated successfully!")
+    turnaround_time = [burst_sorted[i] + waiting_time[i] for i in range(len(processes))]
 
-    except FileNotFoundError:
-        print("Error: students.txt file not found!")
+    print("SJF Waiting Time:", waiting_time)
+    print("SJF Turnaround Time:", turnaround_time)
+
+    gantt_chart(processes_sorted, burst_sorted, "SJF")
 
 
-if __name__ == "__main__":
-    main()
+# ---------------- PRIORITY ----------------
+def priority_scheduling(processes, burst_time, priority):
+    data = list(zip(processes, burst_time, priority))
+    data.sort(key=lambda x: x[2])
+
+    processes_sorted = [x[0] for x in data]
+    burst_sorted = [x[1] for x in data]
+
+    waiting_time = [0] * len(processes)
+
+    for i in range(1, len(processes)):
+        waiting_time[i] = burst_sorted[i - 1] + waiting_time[i - 1]
+
+    turnaround_time = [burst_sorted[i] + waiting_time[i] for i in range(len(processes))]
+
+    print("Priority Waiting Time:", waiting_time)
+    print("Priority Turnaround Time:", turnaround_time)
+
+    gantt_chart(processes_sorted, burst_sorted, "Priority")
+
+
+# ---------------- ROUND ROBIN ----------------
+def round_robin(processes, burst_time, quantum):
+    remaining = burst_time.copy()
+    time = 0
+    sequence = []
+
+    while True:
+        done = True
+
+        for i in range(len(processes)):
+            if remaining[i] > 0:
+                done = False
+
+                if remaining[i] > quantum:
+                    time += quantum
+                    remaining[i] -= quantum
+                    sequence.append((processes[i], quantum))
+                else:
+                    time += remaining[i]
+                    sequence.append((processes[i], remaining[i]))
+                    remaining[i] = 0
+
+        if done:
+            break
+
+    p = []
+    b = []
+    for i in sequence:
+        p.append(i[0])
+        b.append(i[1])
+
+    gantt_chart(p, b, "Round Robin")
+
+
+# ---------------- Gantt Chart ----------------
+def gantt_chart(processes, burst, title):
+    start = 0
+
+    for i in range(len(processes)):
+        plt.barh(0, burst[i], left=start)
+        plt.text(start + burst[i] / 2, 0, processes[i], ha='center', va='center')
+        start += burst[i]
+
+    plt.title(title + " Gantt Chart")
+    plt.yticks([])
+    plt.xlabel("Time")
+    plt.show()
+
+
+# Run Algorithms
+fcfs(processes, burst_time)
+sjf(processes, burst_time)
+priority_scheduling(processes, burst_time, priority)
+round_robin(processes, burst_time, quantum=2)
